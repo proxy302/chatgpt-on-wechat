@@ -23,26 +23,34 @@ from common import utils
 import json
 import os
 
+from lib import torndb
+import db
+import redis
+from models import robot_mapping
+
 URL_VERIFICATION = "url_verification"
 
 
 @singleton
 class FeiShuChanel(ChatChannel):
-    feishu_app_id = conf().get('feishu_app_id')
-    feishu_app_secret = conf().get('feishu_app_secret')
-    feishu_token = conf().get('feishu_token')
+    # feishu_app_id = conf().get('feishu_app_id')
+    # feishu_app_secret = conf().get('feishu_app_secret')
+    # feishu_token = conf().get('feishu_token')
 
     def __init__(self):
         super().__init__()
         # 历史消息id暂存，用于幂等控制
         self.receivedMsgs = ExpiredDict(60 * 60 * 7.1)
-        logger.info("[FeiShu] app_id={}, app_secret={} verification_token={}".format(
-            self.feishu_app_id, self.feishu_app_secret, self.feishu_token))
+        logger.info("[FeiShu] FeiShuChannel init")
         # 无需群校验和前缀
         conf()["group_name_white_list"] = ["ALL_GROUP"]
         conf()["single_chat_prefix"] = []
 
     def startup(self):
+        mysql_conf = conf().get("db").get("mysql")
+        self.db = db.mysql = torndb.Connection(host=mysql_conf.get("host"), database=mysql_conf.get("database"), user=mysql_conf.get("user"), password=mysql_conf.get("password"))
+        pool = redis.Connection(conf().get("db").get("redis"))
+        self.redis = db.redis = redis.Redis(connection_pool=pool)
         urls = (
             '/', 'channel.feishu.feishu_channel.FeishuController'
         )
@@ -97,14 +105,14 @@ class FeiShuChanel(ChatChannel):
             logger.error(f"[FeiShu] send message failed, code={res.get('code')}, msg={res.get('msg')}")
 
 
-    def fetch_access_token(self) -> str:
+    def fetch_access_token(self, feishu_app_id: str, feishu_app_secret: str) -> str:
         url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal/"
         headers = {
             "Content-Type": "application/json"
         }
         req_body = {
-            "app_id": self.feishu_app_id,
-            "app_secret": self.feishu_app_secret
+            "app_id": feishu_app_id,
+            "app_secret": feishu_app_secret,
         }
         data = bytes(json.dumps(req_body), encoding='utf8')
         response = requests.post(url=url, data=data, headers=headers)
@@ -169,8 +177,13 @@ class FeishuController:
             # 2.消息接收处理
             # token 校验
             header = request.get("header")
-            if not header or header.get("token") != channel.feishu_token:
+            if not header or header.get("token") == None:
                 return self.FAILED_MSG
+            token = header.get("token")
+            rm = robot_mapping.get_robot_mapping_by_feishu_token(token)
+            if not rm:
+                return self.FAILED_MSG
+
 
             # 处理消息事件
             event = request.get("event")
@@ -204,7 +217,7 @@ class FeishuController:
                     logger.warning("[FeiShu] message ignore")
                     return self.SUCCESS_MSG
                 # 构造飞书消息对象
-                feishu_msg = FeishuMessage(event, is_group=is_group, access_token=channel.fetch_access_token())
+                feishu_msg = FeishuMessage(event, is_group=is_group, access_token=channel.fetch_access_token(rm['feishu_app_id'], rm['feishu_app_secret']))
                 if not feishu_msg:
                     return self.SUCCESS_MSG
 
