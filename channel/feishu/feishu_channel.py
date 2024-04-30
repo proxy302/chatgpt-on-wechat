@@ -186,7 +186,7 @@ class FeishuController:
             tm = token_mapping.get_token_mapping_by_id(rm['token_id'])
             if not tm:
                 return self.FAILED_MSG
-            tok = t_token.get_token_by_id(tm['token_id'])
+            tok = t_token.get_token_by_id(tm['external_token_id'])
 
 
             # 处理消息事件
