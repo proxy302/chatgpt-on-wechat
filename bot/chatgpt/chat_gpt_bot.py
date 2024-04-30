@@ -22,18 +22,19 @@ class ChatGPTBot(Bot, OpenAIImage):
     def __init__(self):
         super().__init__()
         # set the default api_key
-        openai.api_key = conf().get("open_ai_api_key")
+        # openai.api_key = conf().get("open_ai_api_key")
         if conf().get("open_ai_api_base"):
             openai.api_base = conf().get("open_ai_api_base")
-        proxy = conf().get("proxy")
-        if proxy:
-            openai.proxy = proxy
-        if conf().get("rate_limit_chatgpt"):
-            self.tb4chatgpt = TokenBucket(conf().get("rate_limit_chatgpt", 20))
+        # proxy = conf().get("proxy")
+        # if proxy:
+        #     openai.proxy = proxy
+        # if conf().get("rate_limit_chatgpt"):
+        #     self.tb4chatgpt = TokenBucket(conf().get("rate_limit_chatgpt", 20))
 
-        self.sessions = SessionManager(ChatGPTSession, model=conf().get("model") or "gpt-3.5-turbo")
+        # self.sessions = SessionManager(ChatGPTSession, model=conf().get("model") or "gpt-3.5-turbo")
+        self.sessions = SessionManager(ChatGPTSession)
         self.args = {
-            "model": conf().get("model") or "gpt-3.5-turbo",  # 对话模型的名称
+            # "model": conf().get("model") or "gpt-3.5-turbo",  # 对话模型的名称
             "temperature": conf().get("temperature", 0.9),  # 值在[0,1]之间，越大表示回复越具有不确定性
             # "max_tokens":4096,  # 回复最大的字符数
             "top_p": conf().get("top_p", 1),

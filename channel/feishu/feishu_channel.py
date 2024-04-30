@@ -233,8 +233,8 @@ class FeishuController:
                     msg=feishu_msg,
                     receive_id_type=receive_id_type,
                     no_need_at=True,
-                    api_key = tok['value'],
-                    model_name = mod['name'],
+                    openai_api_key = tok['value'],
+                    gpt_model = mod['name'],
                 )
                 if context:
                     channel.produce(context)
@@ -250,7 +250,6 @@ class FeishuController:
         context.kwargs = kwargs
         if "origin_ctype" not in context:
             context["origin_ctype"] = ctype
-        logger.info(f"[FeiShu] {context}")
 
         cmsg = context["msg"]
         context["session_id"] = cmsg.from_user_id
