@@ -11,9 +11,11 @@ from config import conf
 # OPENAI提供的画图接口
 class OpenAIImage(object):
     def __init__(self):
-        openai.api_key = conf().get("open_ai_api_key")
-        if conf().get("rate_limit_dalle"):
-            self.tb4dalle = TokenBucket(conf().get("rate_limit_dalle", 50))
+        # openai.api_key = conf().get("open_ai_api_key")
+        if conf().get("open_ai_api_base"):
+            openai.api_base = conf().get("open_ai_api_base")
+        # if conf().get("rate_limit_dalle"):
+        #     self.tb4dalle = TokenBucket(conf().get("rate_limit_dalle", 50))
 
     def create_img(self, query, retry_count=0, api_key=None, api_base=None):
         try:

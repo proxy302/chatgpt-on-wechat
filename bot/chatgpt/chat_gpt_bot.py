@@ -45,6 +45,8 @@ class ChatGPTBot(Bot, OpenAIImage):
         }
 
     def reply(self, query, context=None):
+        api_key = context.get("openai_api_key")
+        model = context.get("gpt_model")
         # acquire reply content
         if context.type == ContextType.TEXT:
             logger.info("[CHATGPT] query={}".format(query))
@@ -66,8 +68,6 @@ class ChatGPTBot(Bot, OpenAIImage):
             session = self.sessions.session_query(query, session_id)
             logger.debug("[CHATGPT] session query={}".format(session.messages))
 
-            api_key = context.get("openai_api_key")
-            model = context.get("gpt_model")
             new_args = None
             if model:
                 new_args = self.args.copy()
@@ -96,7 +96,7 @@ class ChatGPTBot(Bot, OpenAIImage):
             return reply
 
         elif context.type == ContextType.IMAGE_CREATE:
-            ok, retstring = self.create_img(query, 0)
+            ok, retstring = self.create_img(query, 0, api_key)
             reply = None
             if ok:
                 reply = Reply(ReplyType.IMAGE_URL, retstring)
