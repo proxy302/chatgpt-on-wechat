@@ -26,7 +26,7 @@ import os
 from lib import torndb
 import db
 import redis
-from models import robot_mapping
+from models import robot_mapping, token_mapping, token
 
 URL_VERIFICATION = "url_verification"
 
@@ -183,6 +183,10 @@ class FeishuController:
             rm = robot_mapping.get_robot_mapping_by_feishu_token(token)
             if not rm:
                 return self.FAILED_MSG
+            tm = token_mapping.get_token_mapping_by_id(rm['token_id'])
+            if not tm:
+                return self.FAILED_MSG
+            tok = token.get_token_by_id(tm['token_id'])
 
 
             # 处理消息事件
@@ -227,7 +231,8 @@ class FeishuController:
                     isgroup=is_group,
                     msg=feishu_msg,
                     receive_id_type=receive_id_type,
-                    no_need_at=True
+                    no_need_at=True,
+                    api_key = tm['value'],
                 )
                 if context:
                     channel.produce(context)
@@ -243,6 +248,7 @@ class FeishuController:
         context.kwargs = kwargs
         if "origin_ctype" not in context:
             context["origin_ctype"] = ctype
+        logger.info(f"[FeiShu] {context}")
 
         cmsg = context["msg"]
         context["session_id"] = cmsg.from_user_id
